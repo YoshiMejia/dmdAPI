@@ -1,7 +1,7 @@
 const cors = require('cors');
 const path = require('path');
 const express = require('express');
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config();
 const port = process.env.PORT;
 const AWS = require('aws-sdk');
 const fs = require('fs');
@@ -28,13 +28,13 @@ app.engine(
 );
 app.set('view engine', 'handlebars');
 
-app.use(express.static('../public/uploads')); // makes this directory the static directory for uploads
+app.use(express.static('./public/uploads')); // makes this directory the static directory for uploads
 app.use('/converted', express.static('converted')); // Serve static files in the 'converted' directory
 app.use(cors());
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, '../public/uploads');
+    cb(null, './public/uploads');
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname));
