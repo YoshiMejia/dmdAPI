@@ -1,0 +1,27 @@
+{
+  "name": "dmdapi",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "dependencies": {
+    "@babel/cli": "^7.21.5",
+    "@babel/core": "^7.21.8",
+    "@babel/preset-env": "^7.21.5",
+    "@babel/preset-react": "^7.18.6",
+    "@reduxjs/toolkit": "^1.9.5",
+    "archiver": "^5.3.1",
+    "aws-sdk": "^2.1379.0",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.0.0",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-handlebars": "^7.0.7",
+    "fs-extra": "^11.1.1",
+    "handlebars": "^4.7.7",
+    "multer": "^1.4.5-lts.1",
+    "web-vitals": "^2.1.4"
+  }
+}
