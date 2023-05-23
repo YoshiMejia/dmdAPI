@@ -10,9 +10,10 @@
 
 #development
 /public/uploads
-src/converted
+/converted
 /config
 todo.md
+
 
 # misc
 .DS_Store
