@@ -72,7 +72,7 @@ app.post('/convert', (req, res) => {
   upload(req, res, (err) => {
     if (err) {
       console.log(err);
-      res.status(500).send('Error processing file upload', err);
+      res.status(500).send('Error processing file upload');
     } else {
       const data = [];
       const selectedTemplate = req.body.template;
@@ -82,7 +82,6 @@ app.post('/convert', (req, res) => {
       );
       const template = handlebars.compile(source);
       const convertedData = [];
-
       fs.createReadStream(req.file.path)
         .pipe(csv())
         .on('data', (row) => {
