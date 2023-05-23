@@ -1,5 +1,4 @@
-const firstTemplateFn = (row, template) => {
-  console.log('inside firstTempFN, looking at row', row);
+const template720v2Fn = (row, template) => {
   const borrower_first_name = row.borrower_first_name || 'nfn';
   const borrower_last_name = row.borrower_last_name || 'nln';
   const borrower_address_1 = row.borrower_address_1 || 'no address';
@@ -13,11 +12,14 @@ const firstTemplateFn = (row, template) => {
   const branch_state = row.branch_state || 'no branch state';
   const branch_postal_code = row.branch_postal_code || 'no branch postal code';
   const branch_phone = row.branch_phone || 'no branch phone';
-  const branch_max_loan_available =
-    row.branch_max_loan_available || 'no branch max loan available';
+  const letter_date = row.letter_date || 'no letter date';
+  const loan_total_amount_due = row.loan_total_amount_due || 'no loan amount';
+  const loan_amount_paid_last =
+    row.loan_amount_paid_last || 'no loan amount paid last';
   const branch_manager_name =
     row.branch_manager_name || 'no branch manager name';
   const current_year = new Date().getFullYear();
+  debugger;
   const html = template({
     borrower_first_name,
     borrower_last_name,
@@ -32,11 +34,13 @@ const firstTemplateFn = (row, template) => {
     branch_state,
     branch_postal_code,
     branch_phone,
-    branch_max_loan_available,
+    letter_date,
+    loan_total_amount_due,
+    loan_amount_paid_last,
     branch_manager_name,
     current_year,
   });
   return html;
 };
 
-module.exports = firstTemplateFn;
+module.exports = template720v2Fn;
