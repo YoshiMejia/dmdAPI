@@ -72,7 +72,8 @@ app.post('/convert', (req, res) => {
   upload(req, res, (err) => {
     if (err) {
       console.log(err);
-      res.status(500).send('Error processing file upload');
+      res.status(status).send(body);
+      // res.status(500).send('Error processing file upload');
     } else {
       const data = [];
       const selectedTemplate = req.body.template;
