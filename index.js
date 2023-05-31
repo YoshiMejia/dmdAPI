@@ -63,31 +63,17 @@ app.use('/converted', convertedRouter);
 
 //removed modularized convertCSV function from /convert endpoint due to HTTP HEADERS error caused by multer. at the moment this endpoint converts to CSV and also uploads to DynamoDB. Need to refactor in future.
 app.post('/convert', (req, res) => {
-  let count = 0;
-  const uniqueFilename = `${uuidv4()}`;
-  const file = req.files.csv;
-  const fileStream = Readable.from(file.data);
-  const s3Params = {
-    Bucket: 'waconverterbucket',
-    Key: `uploads/${uniqueFilename}`,
-    Body: fileStream,
-  };
-  s3.upload(s3Params, (err, data) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send('Error uploading file to S3');
-    } else {
-      console.log('File uploaded to S3 successfully');
-    }
-  });
   const data = [];
   const selectedTemplate = req.body.template;
   const source = fs.readFileSync(
     path.join(__dirname, 'views/layouts', `${selectedTemplate}.hbs`),
     'utf8'
   );
+  let count = 0;
+  const file = req.files.csv;
   const template = handlebars.compile(source);
   const convertedData = [];
+  //the file content buffer is directly passed to csv-parser for processing and converted to a readable stream
   const readable = Readable.from(file.data);
   readable
     .pipe(csv())
@@ -102,25 +88,53 @@ app.post('/convert', (req, res) => {
         if (err) {
           console.log(err);
         } else {
-          console.log(`File ${outputName} created successfully`);
-          const params = {
-            TableName: 'DirectMail',
-            Item: {
-              filename: { S: outputName },
-              dateCreated: { S: currentDate },
-              htmlContent: { S: html },
-              template: { S: selectedTemplate },
-            },
+          const uniqueFilename = `${uuidv4()}`;
+          const fileStream = Readable.from(file.data);
+          const s3UploadParams = {
+            Bucket: process.env.bucket,
+            Key: `uploads/${uniqueFilename}`,
+            Body: fileStream,
           };
-          dynamodb.putItem(params, (err, data) => {
+          const s3DownloadParams = {
+            Bucket: process.env.bucket,
+            Key: `converted/${outputName}`,
+            Body: html,
+          };
+          s3.upload(s3UploadParams, (err, data) => {
             if (err) {
               console.error(err);
+              res.status(500).send('Error uploading CSV to S3');
             } else {
-              console.log(
-                `HTML file ${outputName} uploaded to DynamoDB successfully`
-              );
+              console.log('CSV uploaded to S3 successfully');
             }
           });
+          s3.upload(s3DownloadParams, (err, data) => {
+            if (err) {
+              console.error(err);
+              res.status(500).send('Error uploading conversion to S3');
+            } else {
+              console.log('conversion uploaded to S3 successfully');
+            }
+          });
+          console.log(`File ${outputName} created successfully`);
+          // const params = {
+          //   TableName: 'DirectMail',
+          //   Item: {
+          //     filename: { S: outputName },
+          //     dateCreated: { S: currentDate },
+          //     htmlContent: { S: html },
+          //     template: { S: selectedTemplate },
+          //   },
+          // };
+          // dynamodb.putItem(params, (err, data) => {
+          //   if (err) {
+          //     console.error(err);
+          //   } else {
+          //     console.log(
+          //       `HTML file ${outputName} uploaded to DynamoDB successfully`
+          //     );
+          //   }
+          // });
         }
       });
       data.push(row);
