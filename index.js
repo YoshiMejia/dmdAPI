@@ -28,7 +28,9 @@ app.engine(
 );
 app.set('view engine', 'handlebars');
 
-app.use(express.static('./public/uploads')); // makes this directory the static directory for uploads
+const publicUploadsPath = path.join(__dirname, 'public', 'uploads');
+app.use(express.static(publicUploadsPath));
+// app.use(express.static('./public/uploads')); // makes this directory the static directory for uploads
 app.use('/converted', express.static('converted')); // Serve static files in the 'converted' directory
 app.use(cors());
 
@@ -72,7 +74,7 @@ app.post('/convert', (req, res) => {
   upload(req, res, (err) => {
     if (err) {
       console.log(err);
-      res.status(status).send(body);
+      res.status(err).send(body);
       // res.status(500).send('Error processing file upload');
     } else {
       const data = [];
