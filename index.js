@@ -1,3 +1,6 @@
+const { v4: uuidv4 } = require('uuid');
+const { Readable } = require('stream');
+const fileUpload = require('express-fileupload');
 const cors = require('cors');
 const path = require('path');
 const express = require('express');
@@ -9,9 +12,15 @@ const { engine } = require('express-handlebars');
 const handlebars = require('handlebars');
 const templateCompiler = require('./helpers/templateCompiler');
 const csv = require('csv-parser');
-const multer = require('multer');
 const readConverted = require('./helpers/readConverted');
 const downloadConverted = require('./helpers/downloadConverted');
+
+const currentTime = new Date().toLocaleTimeString('en-US', {
+  hour12: false,
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+});
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -20,6 +29,7 @@ AWS.config.update({
 });
 const dynamodb = new AWS.DynamoDB();
 const currentDate = new Date().toLocaleDateString('en-US');
+const s3 = new AWS.S3();
 
 const app = express();
 app.engine(
@@ -28,21 +38,11 @@ app.engine(
 );
 app.set('view engine', 'handlebars');
 
-const publicUploadsPath = path.join(__dirname, 'public', 'uploads');
-app.use(express.static(publicUploadsPath));
-// app.use(express.static('./public/uploads')); // makes this directory the static directory for uploads
+// const publicUploadsPath = path.join(__dirname, 'public', 'uploads');
+// app.use(express.static(publicUploadsPath));
 app.use('/converted', express.static('converted')); // Serve static files in the 'converted' directory
 app.use(cors());
-
-var storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, './public/uploads');
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-var upload = multer({ storage: storage }).single('csv');
+app.use(fileUpload());
 
 app.get('/', (req, res) => {
   res.sendFile('index.html', { root: __dirname });
@@ -63,71 +63,72 @@ app.use('/converted', convertedRouter);
 
 //removed modularized convertCSV function from /convert endpoint due to HTTP HEADERS error caused by multer. at the moment this endpoint converts to CSV and also uploads to DynamoDB. Need to refactor in future.
 app.post('/convert', (req, res) => {
-  const currentTime = new Date().toLocaleTimeString('en-US', {
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-  const milliseconds = new Date().getMilliseconds();
   let count = 0;
-  upload(req, res, (err) => {
+  const uniqueFilename = `${uuidv4()}`;
+  const file = req.files.csv;
+  const fileStream = Readable.from(file.data);
+  const s3Params = {
+    Bucket: 'waconverterbucket',
+    Key: `uploads/${uniqueFilename}`,
+    Body: fileStream,
+  };
+  s3.upload(s3Params, (err, data) => {
     if (err) {
-      console.log(err);
-      res.status(err).send(body);
-      // res.status(500).send('Error processing file upload');
+      console.error(err);
+      res.status(500).send('Error uploading file to S3');
     } else {
-      const data = [];
-      const selectedTemplate = req.body.template;
-      const source = fs.readFileSync(
-        path.join(__dirname, 'views/layouts', `${selectedTemplate}.hbs`),
-        'utf8'
-      );
-      const template = handlebars.compile(source);
-      const convertedData = [];
-      fs.createReadStream(req.file.path)
-        .pipe(csv())
-        .on('data', (row) => {
-          count++;
-          const html = templateCompiler(selectedTemplate, row, template);
-          convertedData.push(html);
-          const outputName = `output-rowNum-${
-            count + '-' + currentTime + ' - ' + milliseconds
-          }.html`;
-          const outputPath = path.join(__dirname, 'converted', outputName);
-          fs.writeFile(outputPath, html, (err) => {
-            if (err) {
-              console.log(err);
-            } else {
-              console.log(`File ${outputName} created successfully`);
-              const params = {
-                TableName: 'DirectMail',
-                Item: {
-                  filename: { S: outputName },
-                  dateCreated: { S: currentDate },
-                  htmlContent: { S: html },
-                  template: { S: selectedTemplate },
-                },
-              };
-              dynamodb.putItem(params, (err, data) => {
-                if (err) {
-                  console.error(err);
-                } else {
-                  console.log(
-                    `HTML file ${outputName} uploaded to DynamoDB successfully`
-                  );
-                }
-              });
-            }
-          });
-          data.push(row);
-        })
-        .on('end', () => {
-          console.log('CSV file successfully processed');
-          res.json({ convertedData });
-        });
+      console.log('File uploaded to S3 successfully');
     }
   });
+  const data = [];
+  const selectedTemplate = req.body.template;
+  const source = fs.readFileSync(
+    path.join(__dirname, 'views/layouts', `${selectedTemplate}.hbs`),
+    'utf8'
+  );
+  const template = handlebars.compile(source);
+  const convertedData = [];
+  const readable = Readable.from(file.data);
+  readable
+    .pipe(csv())
+    .on('data', (row) => {
+      count++;
+      const uniqueName = `${uuidv4()}`.slice(0, 6);
+      const html = templateCompiler(selectedTemplate, row, template);
+      convertedData.push(html);
+      const outputName = `rowNum-${count + '-' + uniqueName}.html`;
+      const outputPath = path.join(__dirname, 'converted', outputName);
+      fs.writeFile(outputPath, html, (err) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log(`File ${outputName} created successfully`);
+          const params = {
+            TableName: 'DirectMail',
+            Item: {
+              filename: { S: outputName },
+              dateCreated: { S: currentDate },
+              htmlContent: { S: html },
+              template: { S: selectedTemplate },
+            },
+          };
+          dynamodb.putItem(params, (err, data) => {
+            if (err) {
+              console.error(err);
+            } else {
+              console.log(
+                `HTML file ${outputName} uploaded to DynamoDB successfully`
+              );
+            }
+          });
+        }
+      });
+      data.push(row);
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.json({ convertedData });
+    });
 });
 
 app.get('/download_converted/:folderName', (req, res) => {
