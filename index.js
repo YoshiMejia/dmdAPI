@@ -8,6 +8,8 @@ require('dotenv').config();
 const port = process.env.PORT;
 const AWS = require('aws-sdk');
 const fs = require('fs');
+const fsX = require('fs-extra');
+const archiver = require('archiver');
 const { engine } = require('express-handlebars');
 const handlebars = require('handlebars');
 const templateCompiler = require('./helpers/templateCompiler');
@@ -38,6 +40,7 @@ app.engine(
 );
 app.set('view engine', 'handlebars');
 
+//commenting below bc we're uploading to S3/dynamoDB now, not the public directory
 // const publicUploadsPath = path.join(__dirname, 'public', 'uploads');
 // app.use(express.static(publicUploadsPath));
 app.use('/converted', express.static('converted')); // Serve static files in the 'converted' directory
@@ -117,24 +120,24 @@ app.post('/convert', (req, res) => {
             }
           });
           console.log(`File ${outputName} created successfully`);
-          // const params = {
-          //   TableName: 'DirectMail',
-          //   Item: {
-          //     filename: { S: outputName },
-          //     dateCreated: { S: currentDate },
-          //     htmlContent: { S: html },
-          //     template: { S: selectedTemplate },
-          //   },
-          // };
-          // dynamodb.putItem(params, (err, data) => {
-          //   if (err) {
-          //     console.error(err);
-          //   } else {
-          //     console.log(
-          //       `HTML file ${outputName} uploaded to DynamoDB successfully`
-          //     );
-          //   }
-          // });
+          const params = {
+            TableName: 'DirectMail',
+            Item: {
+              filename: { S: outputName },
+              dateCreated: { S: currentDate },
+              htmlContent: { S: html },
+              template: { S: selectedTemplate },
+            },
+          };
+          dynamodb.putItem(params, (err, data) => {
+            if (err) {
+              console.error(err);
+            } else {
+              console.log(
+                `HTML file ${outputName} uploaded to DynamoDB successfully`
+              );
+            }
+          });
         }
       });
       data.push(row);
@@ -147,6 +150,98 @@ app.post('/convert', (req, res) => {
 
 app.get('/download_converted/:folderName', (req, res) => {
   downloadConverted(req, res);
+});
+
+//currently hardcoding the folderName (line 156) to be "converted" for testing purposes
+app.get('/downloadfile', async (req, res) => {
+  const folderName = 'converted';
+  const zipStream = archiver('zip');
+
+  zipStream.on('error', (err) => {
+    console.error('Failed to create zip file:', err);
+    res.status(500).send({ error: 'Failed to create zip file.' });
+  });
+
+  res.attachment('files.zip');
+  zipStream.pipe(res);
+
+  try {
+    const s3ListParams = {
+      Bucket: process.env.bucket,
+      Prefix: folderName + '/',
+    };
+
+    const s3ListObjects = s3.listObjectsV2(s3ListParams).promise();
+    const objects = (await s3ListObjects).Contents;
+    if (objects.length === 0) {
+      console.log('No files found in the S3 bucket.');
+      res.status(404).send({ error: 'No files found in the S3 bucket.' });
+      return;
+    }
+    for (const object of objects) {
+      const s3Params = {
+        Bucket: process.env.bucket,
+        Key: object.Key,
+      };
+
+      const s3Stream = s3.getObject(s3Params).createReadStream();
+      zipStream.append(s3Stream, { name: object.Key });
+    }
+
+    zipStream.finalize();
+  } catch (err) {
+    console.error('Failed to fetch files from S3:', err);
+    res.status(500).send({ error: 'Failed to fetch files from S3.' });
+  }
+});
+
+app.delete('/clear-bucket', async (req, res) => {
+  try {
+    const folderName = 'converted';
+
+    const s3ListParams = {
+      Bucket: process.env.bucket,
+      Prefix: folderName + '/',
+    };
+
+    const s3ListObjects = s3.listObjectsV2(s3ListParams).promise();
+    const objects = (await s3ListObjects).Contents;
+
+    if (objects.length === 0) {
+      console.log('No files found in the S3 bucket.');
+      res.status(404).send({ error: 'No files found in the S3 bucket.' });
+      return;
+    }
+
+    const deleteParams = {
+      Bucket: process.env.bucket,
+      Delete: {
+        Objects: objects.map((object) => ({ Key: object.Key })),
+        Quiet: false,
+      },
+    };
+
+    // await s3.deleteObjects(deleteParams).promise();
+
+    // console.log('S3 bucket cleared successfully.');
+    const deletePromise = s3.deleteObjects(deleteParams).promise();
+    console.log('Delete Objects Promise:', deletePromise);
+
+    const deleteResponse = await deletePromise;
+    console.log('Delete Objects Response:', deleteResponse);
+    if (
+      deleteResponse.Deleted.length === 0 &&
+      deleteResponse.Errors.length > 0
+    ) {
+      console.log('No files were deleted');
+    } else {
+      console.log('S3 bucket cleared successfully.');
+    }
+    res.sendStatus(204);
+  } catch (err) {
+    console.error('Failed to clear the S3 bucket:', err);
+    res.status(500).send({ error: 'Failed to clear the S3 bucket.' });
+  }
 });
 
 app.listen(port, () => {
