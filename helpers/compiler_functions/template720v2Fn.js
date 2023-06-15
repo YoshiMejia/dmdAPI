@@ -19,7 +19,6 @@ const template720v2Fn = (row, template) => {
   const branch_manager_name =
     row.branch_manager_name || 'no branch manager name';
   const current_year = new Date().getFullYear();
-  debugger;
   const html = template({
     borrower_first_name,
     borrower_last_name,

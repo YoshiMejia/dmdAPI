@@ -22,7 +22,6 @@ const template740v2Fn = (row, template) => {
   const loan_amount_paid_last =
     row.loan_amount_paid_last || 'no loan amount paid last';
   const current_year = new Date().getFullYear();
-  debugger;
   const html = template({
     borrower_first_name,
     borrower_last_name,
