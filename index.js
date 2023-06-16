@@ -66,6 +66,7 @@ app.use('/converted', convertedRouter);
 
 //removed modularized convertCSV function from /convert endpoint due to HTTP HEADERS error caused by multer. at the moment this endpoint converts to CSV and also uploads to DynamoDB. Need to refactor in future.
 app.post('/convert', (req, res) => {
+  //i dont think data array is being used now that the convertedData is being used
   const data = [];
   const selectedTemplate = req.body.template;
   const source = fs.readFileSync(
@@ -86,7 +87,10 @@ app.post('/convert', (req, res) => {
       const html = templateCompiler(selectedTemplate, row, template);
       convertedData.push(html);
       const outputName = `rowNum-${count + '-' + uniqueName}.html`;
-      const outputPath = path.join(__dirname, 'converted', outputName);
+      const basePath = process.cwd();
+      const outputPath = path.join(basePath, 'converted', outputName);
+      //commenting below to try out using an absolute path for outputPath
+      // const outputPath = path.join(__dirname, 'converted', outputName);
       fs.writeFile(outputPath, html, (err) => {
         if (err) {
           console.log(err);
@@ -156,7 +160,6 @@ app.get('/download_converted/:folderName', (req, res) => {
 app.get('/downloadfile', async (req, res) => {
   const folderName = 'converted';
   const zipStream = archiver('zip');
-
   zipStream.on('error', (err) => {
     console.error('Failed to create zip file:', err);
     res.status(500).send({ error: 'Failed to create zip file.' });
