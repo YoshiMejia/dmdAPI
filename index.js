@@ -17,12 +17,7 @@ const csv = require('csv-parser');
 const readConverted = require('./helpers/readConverted');
 const downloadConverted = require('./helpers/downloadConverted');
 
-const currentTime = new Date().toLocaleTimeString('en-US', {
-  hour12: false,
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-});
+const basePath = process.cwd();
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -56,7 +51,7 @@ const convertedRouter = express.Router(); // Define a new router for showing the
 
 convertedRouter.get('/success', (req, res) => {
   fs.readdir('converted', (err, files) => {
-    const folderPath = path.join(__dirname, 'converted');
+    const folderPath = path.join(basePath, 'converted');
     readConverted(res, err, files, folderPath);
   });
 });
@@ -68,14 +63,17 @@ app.use('/converted', convertedRouter);
 app.post('/convert', (req, res) => {
   //i dont think data array is being used now that the convertedData is being used
   const data = [];
+  const viewPath = 'views/layouts';
   const selectedTemplate = req.body.template;
+  const sourcePath = path.join(basePath, viewPath);
   const source = fs.readFileSync(
-    path.join(__dirname, 'views/layouts', `${selectedTemplate}.hbs`),
+    path.join(sourcePath, `${selectedTemplate}.hbs`),
     'utf8'
   );
   let count = 0;
   const file = req.files.csv;
   const template = handlebars.compile(source);
+  console.log('line 79');
   const convertedData = [];
   //the file content buffer is directly passed to csv-parser for processing and converted to a readable stream
   const readable = Readable.from(file.data);
@@ -87,7 +85,6 @@ app.post('/convert', (req, res) => {
       const html = templateCompiler(selectedTemplate, row, template);
       convertedData.push(html);
       const outputName = `rowNum-${count + '-' + uniqueName}.html`;
-      const basePath = process.cwd();
       const outputPath = path.join(basePath, 'converted', outputName);
       //commenting below to try out using an absolute path for outputPath
       // const outputPath = path.join(__dirname, 'converted', outputName);
@@ -201,7 +198,7 @@ app.get('/downloadfile', async (req, res) => {
 app.delete('/clear-bucket', async (req, res) => {
   try {
     const folderName = 'converted';
-    const folderPath = path.join(__dirname, folderName);
+    const folderPath = path.join(basePath, folderName);
 
     const files = await fs.promises.readdir(folderPath);
 
