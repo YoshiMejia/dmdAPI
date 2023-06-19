@@ -17,12 +17,11 @@ The target audience for dmdAPI is the WAC workspace, providing a convenient solu
 - Express.js
 - AWS SDK
 - Archiver
-- Cors
+- CORS
 - CSV Parser
 - Dotenv
 - Express Fileupload
 - Express Handlebars
-- FS Extra
 - Handlebars
 - Multer
 
@@ -36,4 +35,6 @@ dmdAPI is currently under development, with continuous improvements and enhancem
 $ git clone https://github.com/YoshiMejia/dmdAPI.git
 $ cd repository
 $ npm install
+$ navigate to root directory
+$ run 'node index.js'
 ```
