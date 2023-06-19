@@ -1,41 +1,94 @@
-const fs = require('fs');
+const { Readable } = require('stream');
 const path = require('path');
-const handlebars = require('handlebars');
+const fs = require('fs');
 const csv = require('csv-parser');
-const templateCompiler = require('./templateCompiler');
+const handlebars = require('handlebars');
+const { v4: uuidv4 } = require('uuid');
 
-let count = 0;
-const convertCSV = (req, res) => {
-  const data = [];
-  // Grab name of template that was selected by user
+const templateCompiler = require('./templateCompiler');
+const basePath = process.cwd();
+const currentDate = new Date().toLocaleDateString('en-US');
+
+const convertCSV = (req, res, s3, dynamodb) => {
+  const viewPath = 'views/layouts';
   const selectedTemplate = req.body.template;
-  // Use the appropriate template function to generate the HTML content
+  const sourcePath = path.join(basePath, viewPath);
   const source = fs.readFileSync(
-    // path.join(__dirname, 'views/layouts', `${selectedTemplate}.hbs`),
-    path.join('./views/layouts', `${selectedTemplate}.hbs`),
+    path.join(sourcePath, `${selectedTemplate}.hbs`),
     'utf8'
   );
+  let count = 0;
+  const file = req.files.csv;
   const template = handlebars.compile(source);
-  // Parse the CSV file and create an HTML file for each row
-  fs.createReadStream(req.file.path)
+  const convertedData = [];
+  //the file content buffer is directly passed to csv-parser for processing and converted to a readable stream
+  const readable = Readable.from(file.data);
+  readable
     .pipe(csv())
     .on('data', (row) => {
       count++;
+      const uniqueName = `${uuidv4()}`.slice(0, 6);
       const html = templateCompiler(selectedTemplate, row, template);
-      const outputName = `output-rowNum-${count}.html`;
-      const outputPath = path.join('./converted', outputName);
+      convertedData.push(html);
+      const outputName = `rowNum-${count + '-' + uniqueName}.html`;
+      const outputPath = path.join(basePath, 'converted', outputName);
       fs.writeFile(outputPath, html, (err) => {
         if (err) {
           console.log(err);
         } else {
+          const uniqueFilename = `${uuidv4()}`;
+          const fileStream = Readable.from(file.data);
+          const s3UploadParams = {
+            Bucket: process.env.bucket,
+            Key: `uploads/${uniqueFilename}`,
+            Body: fileStream,
+          };
+          const s3DownloadParams = {
+            Bucket: process.env.bucket,
+            Key: `converted/${outputName}`,
+            Body: html,
+          };
+          s3.upload(s3UploadParams, (err, data) => {
+            if (err) {
+              console.error(err);
+              res.status(500).send('Error uploading CSV to S3');
+            } else {
+              console.log('CSV uploaded to S3 successfully');
+            }
+          });
+          s3.upload(s3DownloadParams, (err, data) => {
+            if (err) {
+              console.error(err);
+              res.status(500).send('Error uploading conversion to S3');
+            } else {
+              console.log('conversion uploaded to S3 successfully');
+            }
+          });
           console.log(`File ${outputName} created successfully`);
+          const params = {
+            TableName: 'DirectMail',
+            Item: {
+              filename: { S: outputName },
+              dateCreated: { S: currentDate },
+              htmlContent: { S: html },
+              template: { S: selectedTemplate },
+            },
+          };
+          dynamodb.putItem(params, (err, data) => {
+            if (err) {
+              console.error(err);
+            } else {
+              console.log(
+                `HTML file ${outputName} uploaded to DynamoDB successfully`
+              );
+            }
+          });
         }
       });
-      data.push(row);
     })
     .on('end', () => {
       console.log('CSV file successfully processed');
+      res.json({ convertedData });
     });
 };
-
 module.exports = convertCSV;
