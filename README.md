@@ -35,14 +35,4 @@ dmdAPI is currently under development, with continuous improvements and enhancem
 - Open ZIP file
 - run `npm install ` in the root directory (dmdAPI)
 - run `node index.js` to start the server
-- navigate to vercel URL to use API
-
-## Github Installation
-
-```shell
-$ git clone https://github.com/YoshiMejia/dmdAPI.git
-$ cd repository
-$ npm install
-navigate to root directory
-$ run 'node index.js'
-```
+- navigate to https://dmd1.vercel.app/ to use API
