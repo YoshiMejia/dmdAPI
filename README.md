@@ -30,12 +30,19 @@ The target audience for dmdAPI is the WAC workspace, providing a convenient solu
 
 dmdAPI is currently under development, with continuous improvements and enhancements being made.
 
-## Installation
+## ZIP file Installation
+
+- Open ZIP file
+- run 'npm install' in the root directory (dmdAPI)
+- run 'node index.js' to start the server
+- navigate to vercel URL to use API
+
+## Github Installation
 
 ```shell
 $ git clone https://github.com/YoshiMejia/dmdAPI.git
 $ cd repository
 $ npm install
-$ navigate to root directory
+navigate to root directory
 $ run 'node index.js'
 ```
