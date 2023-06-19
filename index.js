@@ -6,6 +6,7 @@ require('dotenv').config();
 const port = process.env.PORT;
 const AWS = require('aws-sdk');
 const fs = require('fs');
+const helmet = require('helmet');
 const { engine } = require('express-handlebars');
 const convertCSV = require('./helpers/convertCSV');
 const readConverted = require('./helpers/readConverted');
@@ -30,6 +31,7 @@ app.engine(
 );
 app.set('view engine', 'handlebars');
 
+app.use(helmet());
 app.use('/converted', express.static('converted')); // Serve static files in the 'converted' directory
 app.use(cors());
 app.use(fileUpload());
