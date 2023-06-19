@@ -24,6 +24,7 @@ The target audience for dmdAPI is the WAC workspace, providing a convenient solu
 - Express Handlebars
 - Handlebars
 - Multer
+- Helmet
 
 ## Project Status
 
