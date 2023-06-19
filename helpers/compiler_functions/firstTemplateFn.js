@@ -1,5 +1,4 @@
 const firstTemplateFn = (row, template) => {
-  console.log('inside firstTempFN, looking at row', row);
   const borrower_first_name = row.borrower_first_name || 'nfn';
   const borrower_last_name = row.borrower_last_name || 'nln';
   const borrower_address_1 = row.borrower_address_1 || 'no address';
