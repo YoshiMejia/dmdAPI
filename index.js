@@ -54,17 +54,19 @@ app.post('/convert', (req, res) => {
   convertCSV(req, res, s3, dynamodb);
 });
 
+// download_converted endpoint is being used for now since this routes automatically to the converted directory, not the S3 bucket
 app.get('/download_converted/:folderName', (req, res) => {
   downloadConverted(req, res);
 });
 
-//currently hardcoding the folderName (line 156) to be "converted" for testing purposes
+// downloadfile endpoint is being saved for when the permissions for the S3 bucket are completely configured.
 app.get('/downloadfile', async (req, res) => {
   downloadFile(req, res, s3);
 });
 
+// this will need to be reconfigured to delete from the S3 bucket
 app.delete('/clear-bucket', async (req, res) => {
-  deleteBucket(req, res, s3);
+  deleteBucket(req, res);
 });
 
 app.listen(port, () => {
