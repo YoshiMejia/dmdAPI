@@ -51,7 +51,6 @@ convertedRouter.get('/success', (req, res) => {
 
 app.use('/converted', convertedRouter);
 
-//removed modularized convertCSV function from /convert endpoint due to HTTP HEADERS error caused by multer. at the moment this endpoint converts to CSV and also uploads to DynamoDB. Need to refactor in future.
 app.post('/convert', (req, res) => {
   convertCSV(req, res, s3, dynamodb);
 });
