@@ -8,7 +8,6 @@ require('dotenv').config();
 const port = process.env.PORT;
 const AWS = require('aws-sdk');
 const fs = require('fs');
-const fsX = require('fs-extra');
 const archiver = require('archiver');
 const { engine } = require('express-handlebars');
 const handlebars = require('handlebars');
@@ -35,16 +34,12 @@ app.engine(
 );
 app.set('view engine', 'handlebars');
 
-//commenting below bc we're uploading to S3/dynamoDB now, not the public directory
-// const publicUploadsPath = path.join(__dirname, 'public', 'uploads');
-// app.use(express.static(publicUploadsPath));
 app.use('/converted', express.static('converted')); // Serve static files in the 'converted' directory
 app.use(cors());
 app.use(fileUpload());
 
 app.get('/', (req, res) => {
   res.sendFile('index.html', { root: __dirname });
-  //the .sendFile method needs the absolute path to the file
 });
 
 const convertedRouter = express.Router(); // Define a new router for showing the converted files
@@ -86,8 +81,6 @@ app.post('/convert', (req, res) => {
       convertedData.push(html);
       const outputName = `rowNum-${count + '-' + uniqueName}.html`;
       const outputPath = path.join(basePath, 'converted', outputName);
-      //commenting below to try out using an absolute path for outputPath
-      // const outputPath = path.join(__dirname, 'converted', outputName);
       fs.writeFile(outputPath, html, (err) => {
         if (err) {
           console.log(err);
