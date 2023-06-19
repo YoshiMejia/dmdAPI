@@ -33,8 +33,8 @@ dmdAPI is currently under development, with continuous improvements and enhancem
 ## ZIP file Installation
 
 - Open ZIP file
-- run 'npm install' in the root directory (dmdAPI)
-- run 'node index.js' to start the server
+- run `npm install ` in the root directory (dmdAPI)
+- run `node index.js` to start the server
 - navigate to vercel URL to use API
 
 ## Github Installation
