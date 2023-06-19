@@ -1,7 +1,7 @@
 const archiver = require('archiver');
 const path = require('path');
 const fs = require('fs');
-const fsX = require('fs-extra');
+// const fsX = require('fs-extra');
 
 const downloadConverted = (req, res) => {
   const folderName = req.query.folderName || 'converted';
@@ -40,12 +40,13 @@ const downloadConverted = (req, res) => {
             console.error('Error deleting ZIP file:', err);
           } else {
             console.log('ZIP file deleted successfully');
-            fsX
-              .emptyDir(folderPath)
-              .then(() => console.log('Converted Folder cleared successfully'))
-              .catch((err) =>
-                console.error('Error clearing Converted Folder:', err)
-              );
+            // commenting out below code so that the converted directory only gets cleared out once the user specifically chooses to. The below automatically clears the directory out upon each download.
+            // fsX
+            //   .emptyDir(folderPath)
+            //   .then(() => console.log('Converted Folder cleared successfully'))
+            //   .catch((err) =>
+            //     console.error('Error clearing Converted Folder:', err)
+            //   );
           }
         });
       }
