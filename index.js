@@ -51,12 +51,10 @@ convertedRouter.get('/success', (req, res) => {
   });
 });
 
-// Use the new router for the '/converted' route
 app.use('/converted', convertedRouter);
 
 //removed modularized convertCSV function from /convert endpoint due to HTTP HEADERS error caused by multer. at the moment this endpoint converts to CSV and also uploads to DynamoDB. Need to refactor in future.
 app.post('/convert', (req, res) => {
-  //i dont think data array is being used now that the convertedData is being used
   const data = [];
   const viewPath = 'views/layouts';
   const selectedTemplate = req.body.template;
@@ -68,7 +66,6 @@ app.post('/convert', (req, res) => {
   let count = 0;
   const file = req.files.csv;
   const template = handlebars.compile(source);
-  console.log('line 79');
   const convertedData = [];
   //the file content buffer is directly passed to csv-parser for processing and converted to a readable stream
   const readable = Readable.from(file.data);
@@ -206,56 +203,6 @@ app.delete('/clear-bucket', async (req, res) => {
     res.status(500).json({ error: 'Failed to clear directory' });
   }
 });
-
-//FOR NOW: keeping /clear-bucket as above to simply clear the converted folder, not the S3 bucket until config options for the bucket are finalized.
-// app.delete('/clear-bucket', async (req, res) => {
-//   try {
-//     const folderName = 'converted';
-
-//     const s3ListParams = {
-//       Bucket: process.env.bucket,
-//       Prefix: folderName + '/',
-//     };
-
-//     const s3ListObjects = s3.listObjectsV2(s3ListParams).promise();
-//     const objects = (await s3ListObjects).Contents;
-
-//     if (objects.length === 0) {
-//       console.log('No files found in the S3 bucket.');
-//       res.status(404).send({ error: 'No files found in the S3 bucket.' });
-//       return;
-//     }
-
-//     const deleteParams = {
-//       Bucket: process.env.bucket,
-//       Delete: {
-//         Objects: objects.map((object) => ({ Key: object.Key })),
-//         Quiet: false,
-//       },
-//     };
-
-//     // await s3.deleteObjects(deleteParams).promise();
-
-//     // console.log('S3 bucket cleared successfully.');
-//     const deletePromise = s3.deleteObjects(deleteParams).promise();
-//     console.log('Delete Objects Promise:', deletePromise);
-
-//     const deleteResponse = await deletePromise;
-//     console.log('Delete Objects Response:', deleteResponse);
-//     if (
-//       deleteResponse.Deleted.length === 0 &&
-//       deleteResponse.Errors.length > 0
-//     ) {
-//       console.log('No files were deleted');
-//     } else {
-//       console.log('S3 bucket cleared successfully.');
-//     }
-//     res.sendStatus(204);
-//   } catch (err) {
-//     console.error('Failed to clear the S3 bucket:', err);
-//     res.status(500).send({ error: 'Failed to clear the S3 bucket.' });
-//   }
-// });
 
 app.listen(port, () => {
   console.log(`Now listening on port ${port}`);
