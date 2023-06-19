@@ -4,8 +4,8 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const handlebars = require('handlebars');
 const { v4: uuidv4 } = require('uuid');
-
 const templateCompiler = require('./templateCompiler');
+
 const basePath = process.cwd();
 const currentDate = new Date().toLocaleDateString('en-US');
 
@@ -21,7 +21,7 @@ const convertCSV = (req, res, s3, dynamodb) => {
   const file = req.files.csv;
   const template = handlebars.compile(source);
   const convertedData = [];
-  //the file content buffer is directly passed to csv-parser for processing and converted to a readable stream
+  //the file content is directly passed to csv-parser for processing and converted to a readable stream
   const readable = Readable.from(file.data);
   readable
     .pipe(csv())
@@ -36,12 +36,10 @@ const convertCSV = (req, res, s3, dynamodb) => {
         if (err) {
           console.log(err);
         } else {
-          const uniqueFilename = `${uuidv4()}`;
-          const fileStream = Readable.from(file.data);
           const s3UploadParams = {
             Bucket: process.env.bucket,
-            Key: `uploads/${uniqueFilename}`,
-            Body: fileStream,
+            Key: `uploads/${outputName}`,
+            Body: readable,
           };
           const s3DownloadParams = {
             Bucket: process.env.bucket,
@@ -49,21 +47,17 @@ const convertCSV = (req, res, s3, dynamodb) => {
             Body: html,
           };
           s3.upload(s3UploadParams, (err, data) => {
-            if (err) {
-              console.error(err);
-              res.status(500).send('Error uploading CSV to S3');
-            } else {
-              console.log('CSV uploaded to S3 successfully');
-            }
-          });
-          s3.upload(s3DownloadParams, (err, data) => {
-            if (err) {
-              console.error(err);
-              res.status(500).send('Error uploading conversion to S3');
-            } else {
-              console.log('conversion uploaded to S3 successfully');
-            }
-          });
+            err
+              ? (console.error(err),
+                res.status(500).send('Error uploading CSV to S3'))
+              : console.log('CSV uploaded to S3 successfully');
+          }),
+            s3.upload(s3DownloadParams, (err, data) => {
+              err
+                ? (console.error(err),
+                  res.status(500).send('Error uploading conversion to S3'))
+                : console.log('conversion uploaded to S3 successfully');
+            });
           console.log(`File ${outputName} created successfully`);
           const params = {
             TableName: 'DirectMail',
@@ -75,13 +69,11 @@ const convertCSV = (req, res, s3, dynamodb) => {
             },
           };
           dynamodb.putItem(params, (err, data) => {
-            if (err) {
-              console.error(err);
-            } else {
-              console.log(
-                `HTML file ${outputName} uploaded to DynamoDB successfully`
-              );
-            }
+            err
+              ? console.error(err)
+              : console.log(
+                  `HTML file ${outputName} uploaded to DynamoDB successfully`
+                );
           });
         }
       });
