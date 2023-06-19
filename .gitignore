@@ -12,6 +12,7 @@ todo.md
 
 .DS_Store
 .env
+package-lock.json
 
 /test files
 
