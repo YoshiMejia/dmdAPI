@@ -1,4 +1,5 @@
 const AWS = require('aws-sdk');
+const dynamodb = new AWS.DynamoDB();
 
 const DynamoAws = () => {
   require('dotenv').config();
@@ -7,7 +8,6 @@ const DynamoAws = () => {
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     region: 'us-west-1',
   });
-  const dynamodb = new AWS.DynamoDB();
 
   const createTableParams = {
     TableName: 'DirectMailTable',
@@ -18,8 +18,8 @@ const DynamoAws = () => {
       { AttributeName: 'filename', KeyType: 'HASH' }, // partition key
     ],
     ProvisionedThroughput: {
-      ReadCapacityUnits: 5, // Adjust the read capacity units as per your requirements
-      WriteCapacityUnits: 5, // Adjust the write capacity units as per your requirements
+      ReadCapacityUnits: 5,
+      WriteCapacityUnits: 5,
     },
   };
 
