@@ -32,7 +32,8 @@ dmdAPI is currently under development, with continuous improvements and enhancem
 
 ## ZIP file Installation
 
-- Open ZIP file
-- run `npm install ` in the root directory (dmdAPI)
+- extract files from ZIP file
+- open up your terminal and cd into the root directory (dmdAPI)
+- run `npm install` in the root directory to install necessary dependencies
 - run `node index.js` to start the server
 - navigate to https://dmd1.vercel.app/ to use API
