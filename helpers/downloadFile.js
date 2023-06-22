@@ -4,7 +4,7 @@ const downloadFile = async (req, res, s3) => {
   const folderName = 'converted';
   const zipStream = archiver('zip');
   zipStream.on('error', (err) => {
-    console.error('Failed to create zip file:', err);
+    console.error('inside downloadFile Failed to create zip file:', err);
     res.status(500).send({ error: 'Failed to create zip file.' });
   });
 

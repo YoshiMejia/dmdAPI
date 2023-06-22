@@ -3,7 +3,7 @@ const path = require('path');
 
 const readConverted = (res, err, files, folderPath) => {
   if (err) {
-    console.log(err);
+    console.log('inside of readConverted, error:', err);
     res.status(500).json({ error: 'Error retrieving files' });
   } else {
     const fileContents = files.map((filename) => {

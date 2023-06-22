@@ -15,7 +15,7 @@ const downloadConverted = (req, res) => {
 
   fs.readdir(folderPath, (err, files) => {
     if (err) {
-      console.error(err);
+      console.log('inside of downloadConverted line 18, error:', err);
       return res.status(500).send('Error reading directory');
     }
 
@@ -31,13 +31,16 @@ const downloadConverted = (req, res) => {
     console.log('ZIP file created successfully');
     res.download(zipPath, (err) => {
       if (err) {
-        console.error(err);
+        console.log('inside of downloadConverted line 34, error:', err);
         res.status(500).send('Error sending file');
       } else {
         console.log('ZIP file sent successfully');
         fs.unlink(zipPath, (err) => {
           if (err) {
-            console.error('Error deleting ZIP file:', err);
+            console.error(
+              'inside of downloadConverted line 40 Error deleting ZIP file:',
+              err
+            );
           } else {
             console.log('ZIP file deleted successfully');
             // commenting out below code so that the converted directory only gets cleared out once the user specifically chooses to. The below automatically clears the directory out upon each download.

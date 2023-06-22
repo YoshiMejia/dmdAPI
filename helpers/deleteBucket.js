@@ -16,7 +16,10 @@ const deleteBucket = async (req, res) => {
 
     res.status(200).json({ message: 'Directory cleared successfully' });
   } catch (error) {
-    console.error('Error clearing directory:', error);
+    console.error(
+      'inside deleteBucket line 19 Error clearing directory:',
+      error
+    );
     res.status(500).json({ error: 'Failed to clear directory' });
   }
 };

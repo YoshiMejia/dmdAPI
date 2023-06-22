@@ -34,7 +34,7 @@ const convertCSV = (req, res, s3, dynamodb) => {
       const outputPath = path.join(basePath, 'converted', outputName);
       fs.writeFile(outputPath, html, (err) => {
         if (err) {
-          console.log(err);
+          console.log('inside of convertCSV line 37, error:', err);
         } else {
           const s3UploadParams = {
             Bucket: process.env.bucket,
@@ -48,13 +48,13 @@ const convertCSV = (req, res, s3, dynamodb) => {
           };
           s3.upload(s3UploadParams, (err, data) => {
             err
-              ? (console.error(err),
+              ? (console.log('inside of convert csv line 51, error:', err),
                 res.status(500).send('Error uploading CSV to S3'))
               : console.log('CSV uploaded to S3 successfully');
           }),
             s3.upload(s3DownloadParams, (err, data) => {
               err
-                ? (console.error(err),
+                ? (console.log('inside of convert csv line 57, error:', err),
                   res.status(500).send('Error uploading conversion to S3'))
                 : console.log('conversion uploaded to S3 successfully');
             });
@@ -70,7 +70,7 @@ const convertCSV = (req, res, s3, dynamodb) => {
           };
           dynamodb.putItem(params, (err, data) => {
             err
-              ? console.error(err)
+              ? console.log('inside of convert csv line 73, error:', err)
               : console.log(
                   `HTML file ${outputName} uploaded to DynamoDB successfully`
                 );
