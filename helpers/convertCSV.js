@@ -32,6 +32,8 @@ const convertCSV = (req, res, s3, dynamodb) => {
       convertedData.push(html);
       const outputName = `rowNum-${count + '-' + uniqueName}.html`;
       const outputPath = path.join(basePath, 'converted', outputName);
+      console.log('outputPath:', outputPath);
+      console.log('basePath:', basePath);
       fs.writeFile(outputPath, html, (err) => {
         if (err) {
           console.log('inside of convertCSV line 37, error:', err);
